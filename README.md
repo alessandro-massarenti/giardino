@@ -1,2 +1,3 @@
-# irrigation
-Irrigation automation with arduino or esp board
+# Giard.ino
+Automazione nell'ambito dell'irrigazione
+
