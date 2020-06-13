@@ -9,23 +9,38 @@ void setup()
 {
     // put your setup code here, to run once:
     pinMode(userPin, INPUT_PULLUP);
-    pinMode(buttonOnePin, INPUT_PULLUP);
     Serial.begin(9600);
 }
 
 void loop()
 {
 
-    Relay pump(pumpPin, 0, 5000);
-    Relay zoneOne(zoneOnePin, 0, 5000);
+    Relay pump(pumpPin, 1000, 5000);
+    Relay zoneOne(zoneOnePin, 0, 0);
+    Relay zoneTwo(zoneTwoPin, 0, 0);
+
+    Button buttonOne(buttonOnePin);
+    Button buttonTwo(buttonTwoPin);
 
     bool user;
     while (true)
     {
-        !digitalRead(userPin) ? pump.on() : pump.off();
-        !digitalRead(buttonOnePin) ? zoneOne.on() : zoneOne.off();
+        user = !digitalRead(userPin);
 
-        pump.routine();
-        zoneOne.routine();
+        if(user){
+            pump.on();
+            buttonOne.read() ? zoneOne.on() : zoneOne.off();
+            buttonTwo.read() ? zoneTwo.on() : zoneTwo.off();
+
+        }else{
+            pump.off();
+            buttonOne.reset();
+            buttonTwo.reset();
+            zoneOne.off();
+            zoneTwo.off();
+        }
+        
+        
+        delay(10);
     }
 }

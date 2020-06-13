@@ -1,44 +1,40 @@
-const unsigned long debounceDelay = 50;
+
 
 class Button
 {
 private:
+    const unsigned long debounceDelay = 50;
     int _pin;
-    bool _prev_state, state;
-    unsigned long _prev_time;
+    bool _state = false, _prev_state = false;
+    unsigned long _action_time = 0;
 
 public:
-    Button(int button_pin) : _pin(button_pin), _prev_state(HIGH), _prev_time(0)
+    Button(int button_pin) : _pin(button_pin)
     {
         pinMode(_pin, INPUT_PULLUP);
     }
 
-    bool buttonRoutine()
+    bool read()
     {
-        bool change = false;
-        int button_state = digitalRead(_pin);
-
-        Serial.print(String(button_state));
+        bool button_state = digitalRead(_pin);
 
         if (button_state != _prev_state)
-            _prev_time = millis();
-
-        if ((millis() - _prev_time) > debounceDelay)
         {
-            // if the button state has changed:
-            if (button_state != state)
+            if (button_state == LOW)
             {
-                state = button_state;
-
-                // only toggle the LED if the new button state is HIGH
-                if (state == HIGH)
+                if ((_action_time + debounceDelay) < millis())
                 {
-                    change = true;
+                    _state = !_state;
+                    _action_time = millis();
                 }
             }
+            _prev_state = button_state;
         }
-        Serial.println(String(change));
-        return change;
+        return _state;
+    }
+
+    void reset(){
+        _state = false;
     }
 };
 
@@ -50,11 +46,22 @@ private:
     unsigned long _on_delay, _off_delay, _action_time = 0;
     bool _state = false, _next_state = false;
 
+    void routine()
+    {
+        unsigned long time = millis();
+        if (_next_state && (_action_time + _on_delay) < time)
+            _state = true;
+        else if (!_next_state && (time - _action_time) > _off_delay)
+            _state = false;
+        _state ? digitalWrite(_pin, LOW) : digitalWrite(_pin, HIGH);
+    }
+
 public:
     Relay(int pin, unsigned long on_delay = 0, unsigned long off_delay = 0) : _pin(pin), _on_delay(on_delay), _off_delay(off_delay)
     {
         pinMode(_pin, OUTPUT);
         pinMode(_pin, HIGH);
+        off();
     }
 
     void on()
@@ -64,6 +71,8 @@ public:
             _next_state = true;
             _action_time = millis();
         }
+
+        routine();
     }
 
     void off()
@@ -73,15 +82,6 @@ public:
             _next_state = false;
             _action_time = millis();
         }
-    }
-
-    void routine()
-    {
-        unsigned long time = millis();
-        if (_next_state && (_action_time + _on_delay) < time)
-            _state = true;
-        else if (!_next_state && (time - _action_time) > _off_delay)
-            _state = false;
-        _state ? digitalWrite(_pin, LOW) : digitalWrite(_pin, HIGH);
+        routine();
     }
 };
